@@ -5,17 +5,20 @@ var exec = require('child_process').execFile;
 
 export function activate(context: vscode.ExtensionContext) {
 
+    var isRunning = false;
 
-    let disposable = vscode.commands.registerCommand('extension.launch', () => {
+    let disposable = vscode.commands.registerCommand('lövelauncher.launch', () => {
 
-        //TODO: Make this dynamic (Ask via vscode.window.showInputBox and store that value) 
-        var path = 'C:\\Program Files\\LOVE\\love.exe';
-        
-        console.log(path);
-        exec(path, [vscode.workspace.rootPath], function(err, data) {  
-            console.log(err)
-            console.log(data.toString());                       
-        });  
+        if(!isRunning){
+            var path = vscode.workspace.getConfiguration('lövelauncher.path')[0];
+            
+            isRunning = true;
+            exec(path, [vscode.workspace.rootPath], function(err, data) {  
+                isRunning = false;                 
+            });  
+        }else{
+            vscode.window.showErrorMessage("You still have an active Löve instance");
+        }
         
     });
 

@@ -11,20 +11,31 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.launch"
+        "onCommand:lövelauncher.launch"
     ],
     "main": "./out/src/extension",
     "contributes": {
         "commands": [{
-            "command": "extension.launch",
+            "command": "lövelauncher.launch",
             "title": "Launch Löve"
         }],
         "keybindings":[
             {
-                "command": "extension.launch",
+                "command": "lövelauncher.launch",
                 "key": "Alt+L"
             }
-        ]
+        ],
+        "configuration": {
+			"type": "object",
+			"title": "Löve Launcher config",
+			"properties": {
+				"lövelauncher.path": {
+					"type": ["string"],
+					"description": "Set Path to your love executable.",
+					"default": ["C:\\Program Files\\LOVE\\love.exe"]
+				}
+			}
+		}
     },
     "scripts": {
         "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
