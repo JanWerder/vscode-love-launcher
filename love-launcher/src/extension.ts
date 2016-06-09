@@ -5,19 +5,23 @@ var exec = require('child_process').execFile;
 
 export function activate(context: vscode.ExtensionContext) {
 
-    var isRunning = false;
+    var currentInstances = 0;
+    var maxInstances = vscode.workspace.getConfiguration('lövelauncher').get('maxInstances');
+  
 
     let disposable = vscode.commands.registerCommand('lövelauncher.launch', () => {
 
-        if(!isRunning){
-            var path = vscode.workspace.getConfiguration('lövelauncher.path')[0];
+          console.log(maxInstances);
+
+        if(currentInstances < maxInstances){
+            var path = vscode.workspace.getConfiguration('lövelauncher').get('path');
             
-            isRunning = true;
+            currentInstances++;
             exec(path, [vscode.workspace.rootPath], function(err, data) {  
-                isRunning = false;                 
+                currentInstances--;                
             });  
         }else{
-            vscode.window.showErrorMessage("You still have an active Löve instance");
+            vscode.window.showErrorMessage("You have reached your max concurrent Löve instances. You can change this setting in your config.");
         }
         
     });

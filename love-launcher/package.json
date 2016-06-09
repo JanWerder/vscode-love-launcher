@@ -30,9 +30,14 @@
 			"title": "Löve Launcher config",
 			"properties": {
 				"lövelauncher.path": {
-					"type": ["string"],
+					"type": "string",
 					"description": "Set Path to your love executable.",
-					"default": ["C:\\Program Files\\LOVE\\love.exe"]
+					"default": "C:\\Program Files\\LOVE\\love.exe"
+				},
+                "lövelauncher.maxInstances": {
+					"type": "integer",
+					"description": "Set the max amount of instance you want to be able to spawn at the same time.",
+					"default": 1
 				}
 			}
 		}
