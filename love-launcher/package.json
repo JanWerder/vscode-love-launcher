@@ -1,8 +1,8 @@
 {
-    "name": "love-launcher",
-    "displayName": "love-launcher",
-    "description": "Launches your project in Löve",
-    "version": "0.0.1",
+    "name": "löve-launcher",
+    "displayName": "löve-launcher",
+    "description": "Launches your project in Löve via a shortcut",
+    "version": "1.0.0",
     "publisher": "JanW",
     "engines": {
         "vscode": "^1.0.0"
