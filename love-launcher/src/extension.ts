@@ -11,15 +11,21 @@ export function activate(context: vscode.ExtensionContext) {
 
     let disposable = vscode.commands.registerCommand('lövelauncher.launch', () => {
 
-          console.log(maxInstances);
-
         if(currentInstances < maxInstances){
-            var path = vscode.workspace.getConfiguration('lövelauncher').get('path');
+            var path : string = vscode.workspace.getConfiguration('lövelauncher').get('path').toString();
+            var useConsoleSubsystem = vscode.workspace.getConfiguration('lövelauncher').get('useConsoleSubsystem');
             
             currentInstances++;
-            exec(path, [vscode.workspace.rootPath], function(err, data) {  
-                currentInstances--;                
-            });  
+            if(!useConsoleSubsystem){
+                exec(path, [vscode.workspace.rootPath], function(err, data) {  
+                    currentInstances--;                
+                });  
+            }else{
+                path = path.substr(0,path.lastIndexOf(".")) + "c.exe";
+                exec(path, [vscode.workspace.rootPath], function(err, data) {  
+                    currentInstances--;                
+                });  
+            }
         }else{
             vscode.window.showErrorMessage("You have reached your max concurrent Löve instances. You can change this setting in your config.");
         }

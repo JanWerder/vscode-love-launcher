@@ -2,7 +2,7 @@
     "name": "love-launcher",
     "displayName": "Löve Launcher",
     "description": "Launches your project in Löve via a shortcut",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "icon": "logo.svg",
     "galleryBanner": {
         "color": "#6CBEE4",
@@ -15,39 +15,52 @@
     "categories": [
         "Other"
     ],
-    "keywords" : [ "Löve","love2d","launcher","game","engine" ],
+    "keywords": [
+        "Löve",
+        "love2d",
+        "launcher",
+        "game",
+        "engine"
+    ],
     "license": "MIT",
     "activationEvents": [
         "onCommand:lövelauncher.launch"
     ],
     "main": "./out/src/extension",
     "contributes": {
-        "commands": [{
-            "command": "lövelauncher.launch",
-            "title": "Launch Löve"
-        }],
-        "keybindings":[
+        "commands": [
+            {
+                "command": "lövelauncher.launch",
+                "title": "Launch Löve"
+            }
+        ],
+        "keybindings": [
             {
                 "command": "lövelauncher.launch",
                 "key": "Alt+L"
             }
         ],
         "configuration": {
-			"type": "object",
-			"title": "Löve Launcher config",
-			"properties": {
-				"lövelauncher.path": {
-					"type": "string",
-					"description": "Set Path to your love executable.",
-					"default": "C:\\Program Files\\LOVE\\love.exe"
-				},
+            "type": "object",
+            "title": "Löve Launcher config",
+            "properties": {
+                "lövelauncher.path": {
+                    "type": "string",
+                    "description": "Set Path to your love executable.",
+                    "default": "C:\\Program Files\\LOVE\\love.exe"
+                },
                 "lövelauncher.maxInstances": {
-					"type": "integer",
-					"description": "Set the max amount of instance you want to be able to spawn at the same time.",
-					"default": 1
-				}
-			}
-		}
+                    "type": "integer",
+                    "description": "Set the max amount of instance you want to be able to spawn at the same time.",
+                    "default": 1
+                },
+                "lövelauncher.useConsoleSubsystem": {
+                    "type": "boolean",
+                    "description": "Should Löve be executed with the console subsystem? (Windows only)",
+                    "default": false
+                }
+            }
+        }
     },
     "scripts": {
         "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
