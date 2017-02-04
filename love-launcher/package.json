@@ -2,7 +2,7 @@
     "name": "love-launcher",
     "displayName": "Löve Launcher",
     "description": "Launches your project in Löve via a shortcut",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "icon": "logo.svg",
     "galleryBanner": {
         "color": "#6CBEE4",
@@ -58,6 +58,11 @@
                     "type": "boolean",
                     "description": "Should Löve be executed with the console subsystem? (Windows only)",
                     "default": false
+                },
+                "lövelauncher.overWrite": {
+                    "type": "boolean",
+                    "description": "Should the launcher overwrite the first process when launching another one?",
+                    "default": true
                 }
             }
         }

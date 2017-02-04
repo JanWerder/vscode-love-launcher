@@ -9,3 +9,6 @@
 
 1.0.3
 - Added support for lovec.exe (0.10.2)
+
+1.0.4
+- Added support overwriting the game on each launch. The switch for that is stored in the use settings.
