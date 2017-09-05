@@ -8,7 +8,6 @@ export function activate(context: vscode.ExtensionContext) {
     var overWrite = vscode.workspace.getConfiguration('lövelauncher').get('overWrite');
 
     let disposable = vscode.commands.registerCommand('lövelauncher.launch', () => {
-
         if(currentInstances.length < maxInstances || overWrite){
             var path : string = vscode.workspace.getConfiguration('lövelauncher').get('path').toString();
             var useConsoleSubsystem = vscode.workspace.getConfiguration('lövelauncher').get('useConsoleSubsystem');
@@ -27,14 +26,12 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             if(!useConsoleSubsystem){
-
                 var process = exec(path, [vscode.workspace.rootPath], function(err, data) {
 
                 });
                 process.on('exit', on_exit.bind(null,process));
                 currentInstances[process.pid] = process;
             }else{
-
                 var process = exec(path, [vscode.workspace.rootPath, "--console"], function (err, data) {
 
                 });
