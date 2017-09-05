@@ -2,7 +2,7 @@
     "name": "love-launcher",
     "displayName": "Löve Launcher",
     "description": "Launches your project in Löve via a shortcut",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "icon": "logo.svg",
     "galleryBanner": {
         "color": "#6CBEE4",
@@ -63,6 +63,11 @@
                     "type": "boolean",
                     "description": "Should the launcher overwrite the first process when launching another one?",
                     "default": true
+                },
+                "lövelauncher.saveAllonLaunch": {
+                    "type": "boolean",
+                    "description": "Should VS Code save all opened files on Löve launch?",
+                    "default": false
                 }
             }
         }
