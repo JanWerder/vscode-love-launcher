@@ -4,7 +4,7 @@
 1.0.1
 - Several small fixes
 
-1.0.2 
+1.0.2
 - Added a ReadMe
 
 1.0.3
@@ -12,3 +12,7 @@
 
 1.0.4
 - Added support overwriting the game on each launch. The switch for that is stored in the use settings.
+
+1.0.5
+- Added support for saving all files on launch
+- Fixed console support
