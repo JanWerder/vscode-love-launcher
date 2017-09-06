@@ -1,7 +1,7 @@
 'use strict';
 import * as vscode from 'vscode';
 var exec = require('child_process').execFile;
-var currentInstances = [];
+let currentInstances = [];
 
 export function activate(context: vscode.ExtensionContext) {
     var maxInstances = vscode.workspace.getConfiguration('lövelauncher').get('maxInstances');

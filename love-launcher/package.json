@@ -3,7 +3,7 @@
     "displayName": "Löve Launcher",
     "description": "Launches your project in Löve via a shortcut",
     "version": "1.0.5",
-    "icon": "logo.svg",
+    "icon": "logo.png",
     "galleryBanner": {
         "color": "#6CBEE4",
         "theme": "dark"
