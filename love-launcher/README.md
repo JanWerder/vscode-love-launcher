@@ -1,7 +1,7 @@
 # vscode-love-launcher
 A Löve Launcher Extension for Visual Studio Code
 
-![](http://i.imgur.com/lIMsXN9.png)
+![](https://raw.githubusercontent.com/JanWerder/vscode-love-launcher/master/assets/launch.png)
 
 ##Usage
 1. Press Ctrl+P and type ```ext install love-launcher``` with a trailing space.
@@ -12,4 +12,4 @@ A Löve Launcher Extension for Visual Studio Code
 
 ##Configuration
 
-![](http://i.imgur.com/R5D4xj4.png)
+![](https://raw.githubusercontent.com/JanWerder/vscode-love-launcher/master/assets/conf.png)
