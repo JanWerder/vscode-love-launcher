@@ -2,7 +2,7 @@
 	"name": "love-launcher",
 	"displayName": "love-launcher",
 	"description": "Launches your project in Löve via a shortcut",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"icon": "images/logo.png",
     "repository": "https://github.com/JanWerder/vscode-love-launcher",
 	"publisher": "JanW",
@@ -56,12 +56,12 @@
                     "description": "Should Löve be executed with the console subsystem? (Windows only)",
                     "default": false
                 },
-                "lövelauncher.overWrite": {
+                "lövelauncher.overwrite": {
                     "type": "boolean",
                     "description": "Should the launcher overwrite the first process when launching another one?",
                     "default": true
                 },
-                "lövelauncher.saveAllonLaunch": {
+                "lövelauncher.saveAllOnLaunch": {
                     "type": "boolean",
                     "description": "Should VS Code save all opened files on Löve launch?",
                     "default": false

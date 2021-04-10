@@ -10,7 +10,7 @@ let currentInstances: cp.ChildProcess[] = [];
 export function activate(context: vscode.ExtensionContext) {
 
 	var maxInstances: number = Number(vscode.workspace.getConfiguration('lövelauncher').get('maxInstances'));
-	var overWrite: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('overWrite'));
+	var overwrite: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('overwrite'));
 	/* 
 	The command has been defined in the package.json file. Now provide the implementation of the
 	command with registerCommand. The commandId parameter must match the command field in package.json.
@@ -23,36 +23,36 @@ export function activate(context: vscode.ExtensionContext) {
 		file (being open in the VSCode editor), and look for it's root folder amongst the others. Start by getting 
 		the currently-being-edited document from the VSCode editor.
 		*/
-		var ActDocPath = vscode.window.activeTextEditor?.document.uri.fsPath;
-		var pathlen = ActDocPath?.length;
+		var actDocPath = vscode.window.activeTextEditor?.document.uri.fsPath;
+		var pathlen = actDocPath?.length;
 		/* 
 		Since the above uri path includes the reference to the actual file being edited (as: 
 		...\<workspace root>\<filename.extension>), we have to find the last "\" in the uri string
 		and cut off all characters thereafter, to only have the folder uri (as: ...\<workspace root>).
 		*/
-		if (pathlen && ActDocPath) {
+		if (pathlen && actDocPath) {
 			for (let i = 0; i < pathlen; i++) {
 				/* Search from end of uri string to beginning */
-				if (ActDocPath.charAt(pathlen - i) == '\\') {
+				if (actDocPath.charAt(pathlen - i) === '\\') {
 					/* After finding the first "\" (from the right hand side), slice off all text after that. */
-					ActDocPath = ActDocPath.slice(0, pathlen - i);
+					actDocPath = actDocPath.slice(0, pathlen - i);
 					break;
 				}
 			}
 		}
 		/* Check if a workspace folder has been opened and is active; 'undefined' leads to error msg - see furhter down. */
-		if (ActDocPath != undefined) {
+		if (actDocPath !== undefined) {
 
-			if (currentInstances.length < maxInstances || overWrite) {
+			if (currentInstances.length < maxInstances || overwrite) {
 				var path: string = String(vscode.workspace.getConfiguration('lövelauncher').get('path'));
 				var useConsoleSubsystem: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('useConsoleSubsystem'));
-				var saveAllonLaunch: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('saveAllonLaunch'));
+				var saveAllOnLaunch: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('saveAllOnLaunch'));
 
-				if (saveAllonLaunch) {
+				if (saveAllOnLaunch) {
 					vscode.workspace.saveAll();
 				}
 
-				if (overWrite) {
+				if (overwrite) {
 					currentInstances.forEach(function (instance) {
 						if (instance != undefined) {
 							instance.kill();
@@ -61,10 +61,10 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 
 				if (!useConsoleSubsystem) {
-					var process = cp.spawn(path, [ActDocPath]);
+					var process = cp.spawn(path, [actDocPath]);
 					currentInstances[process.pid] = process;
 				} else {
-					var process = cp.spawn(path, [ActDocPath, "--console"]);
+					var process = cp.spawn(path, [actDocPath, "--console"]);
 					currentInstances[process.pid] = process;
 				}
 			} else {
