@@ -4,6 +4,7 @@
 	"description": "Launches your project in Löve via a shortcut",
 	"version": "1.0.6",
 	"icon": "images/logo.png",
+    "repository": "https://github.com/JanWerder/vscode-love-launcher",
 	"publisher": "JanW",
 	"engines": {
 		"vscode": "^1.55.0"
