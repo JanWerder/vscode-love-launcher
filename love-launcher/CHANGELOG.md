@@ -16,3 +16,7 @@
 1.0.5
 - Added support for saving all files on launch
 - Fixed console support
+
+1.0.6
+- Revised the script to be more compatible to the recent vscode versions
+- Fixes for the root path by @Sikloon

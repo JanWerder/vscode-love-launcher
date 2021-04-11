@@ -11,7 +11,7 @@ export function activate(context: vscode.ExtensionContext) {
 	var overwrite: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('overwrite'));
 	
 	let disposable = vscode.commands.registerCommand('lövelauncher.launch', () => {
-		/* Code placed here will be executed every time the command is executed. */
+
 		/* 
 		Since "vscode.workspace.rootPath" has been deprecated, "vscode.workspace.workspaceFolders" should be used.
 		However, due to the multi-root workspaces of VSCode, it would be more prudent to identify the current active
@@ -77,7 +77,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		} else {
 			/* Undefined workspace folder leads to error msg. */
-			vscode.window.showErrorMessage("vscode.workspace.workspaceFolders is undefined. Please check that you have opened you project as a work space.");
+			vscode.window.showErrorMessage("vscode.workspace.workspaceFolders is undefined. Please check that you have opened you project as a workspace.");
 		}
 
 	});
