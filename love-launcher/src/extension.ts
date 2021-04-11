@@ -1,22 +1,17 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import cp = require('child_process');
+import { ChildProcess } from 'node:child_process';
+const os = require('os');
 
 let currentInstances: cp.ChildProcess[] = [];
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
 	var maxInstances: number = Number(vscode.workspace.getConfiguration('lövelauncher').get('maxInstances'));
 	var overwrite: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('overwrite'));
-	/* 
-	The command has been defined in the package.json file. Now provide the implementation of the
-	command with registerCommand. The commandId parameter must match the command field in package.json.
-	*/
+	
 	let disposable = vscode.commands.registerCommand('lövelauncher.launch', () => {
-		/* Code placed here will be executed every time the command is executed. */
+
 		/* 
 		Since "vscode.workspace.rootPath" has been deprecated, "vscode.workspace.workspaceFolders" should be used.
 		However, due to the multi-root workspaces of VSCode, it would be more prudent to identify the current active
@@ -30,10 +25,13 @@ export function activate(context: vscode.ExtensionContext) {
 		...\<workspace root>\<filename.extension>), we have to find the last "\" in the uri string
 		and cut off all characters thereafter, to only have the folder uri (as: ...\<workspace root>).
 		*/
+
+		var pathSeperator: string = (os.platform() === 'win32'? '\\': '/');
+
 		if (pathlen && actDocPath) {
 			for (let i = 0; i < pathlen; i++) {
 				/* Search from end of uri string to beginning */
-				if (actDocPath.charAt(pathlen - i) === '\\') {
+				if (actDocPath.charAt(pathlen - i) === pathSeperator) {
 					/* After finding the first "\" (from the right hand side), slice off all text after that. */
 					actDocPath = actDocPath.slice(0, pathlen - i);
 					break;
@@ -54,17 +52,24 @@ export function activate(context: vscode.ExtensionContext) {
 
 				if (overwrite) {
 					currentInstances.forEach(function (instance) {
-						if (instance != undefined) {
+						if (instance.killed === false) {
 							instance.kill();
 						}
 					});
 				}
 
-				if (!useConsoleSubsystem) {
-					var process = cp.spawn(path, [actDocPath]);
-					currentInstances[process.pid] = process;
-				} else {
-					var process = cp.spawn(path, [actDocPath, "--console"]);
+				var process = null;
+
+				if (os.platform() === 'win32'){
+					if (!useConsoleSubsystem) {
+						process = cp.spawn(path, [actDocPath]);
+						currentInstances[process.pid] = process;
+					} else {
+						process = cp.spawn(path, [actDocPath, "--console"]);
+						currentInstances[process.pid] = process;
+					}
+				}else{
+					process = cp.exec('open -n -a love ' + actDocPath);
 					currentInstances[process.pid] = process;
 				}
 			} else {
@@ -72,7 +77,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		} else {
 			/* Undefined workspace folder leads to error msg. */
-			vscode.window.showErrorMessage("vscode.workspace.workspaceFolders is undefined. Please check that you have opened you project as a work space.");
+			vscode.window.showErrorMessage("vscode.workspace.workspaceFolders is undefined. Please check that you have opened you project as a workspace.");
 		}
 
 	});
