@@ -54,15 +54,11 @@ export function activate(context: vscode.ExtensionContext) {
                     });
                 }
                 if(!useConsoleSubsystem){
-                    var process = exec(path, [vscode.workspace.rootPath], function(err, data) {
-
-                    });
+                    var process = exec(path, [vscode.workspace.rootPath], function(err, data) {});
                     process.on('exit', on_exit.bind(null,process));
                     currentInstances[process.pid] = process;
                 }else{
-                    var process = exec(path, [vscode.workspace.rootPath, "--console"], function (err, data) {
-
-                    });
+                    var process = exec(path, [vscode.workspace.rootPath, "--console"], function (err, data) {});
                     process.on('exit', on_exit.bind(null,process));
                     currentInstances[process.pid] = process;
                 }
