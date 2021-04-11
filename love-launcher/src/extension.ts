@@ -2,7 +2,6 @@
 import * as vscode from 'vscode';
 var exec = require('child_process').execFile;
 let currentInstances = [];
-
 /* 
 This method is called when extension is activated. The extension is activated the very first
 time the command is executed - BUT ONCE ONLY! 
@@ -23,32 +22,30 @@ export function activate(context: vscode.ExtensionContext) {
         the currently-being-edited document from the VSCode editor.
         */
         var ActDocPath = vscode.window.activeTextEditor.document.uri.fsPath;
-        var pathlen = ActDocPath.length;
-        /* 
-        Since the above uri path includes the reference to the actual file being edited (as: 
-        ...\<workspace root>\<filename.extension>), we have to find the last "\" in the uri string
-        and cut off all characters thereafter, to only have the folder uri (as: ...\<workspace root>).
-        */
-        for (let i = 0; i < pathlen; i++) {
-            /* Search from end of uri string to beginning */
-            if (ActDocPath.charAt(pathlen - i) == '\\') {
-                /* After finding the first "\" (from the right hand side), slice off all text after that. */
-                ActDocPath = ActDocPath.slice(0,pathlen-i);
-                break;
-            }
-        }
         /* Check if a workspace folder has been opened and is active; 'undefined' leads to error msg - see furhter down. */
         if (ActDocPath != undefined) {        
-
+            /* 
+            Since the above uri path includes the reference to the actual file being edited (as: 
+            ...\<workspace root>\<filename.extension>), we have to find the last "\" (MS) or "/" (Mac or Unix) in the uri 
+            string and cut off all characters thereafter, to only have the folder uri (as: ...\<workspace root>).
+            */
+            var pathlen = ActDocPath.length;
+            for (let i = 0; i < pathlen; i++) {
+                /* Search from end of uri string to beginning (right to left) */
+                var char2eval = actvDocPath.charAt(pathlen - i);
+                if (char2eval == '\\' || char2eval == '/' ) {
+                    /* After finding the first "\" OR "/" (from the right hand side), slice off all text after that. */
+                    ActDocPath = ActDocPath.slice(0,pathlen-i);
+                    break;
+                }
+            }
             if(currentInstances.length < maxInstances || overWrite){
                 var path : string = vscode.workspace.getConfiguration('lövelauncher').get('path').toString();
                 var useConsoleSubsystem = vscode.workspace.getConfiguration('lövelauncher').get('useConsoleSubsystem');
                 var saveAllonLaunch = vscode.workspace.getConfiguration('lövelauncher').get('saveAllonLaunch');
-
                 if (saveAllonLaunch){
                     vscode.workspace.saveAll();
                 }
-
                 if (overWrite){
                     currentInstances.forEach(function(instance){
                         if (instance != undefined){
@@ -56,7 +53,6 @@ export function activate(context: vscode.ExtensionContext) {
                         }
                     });
                 }
-
                 if(!useConsoleSubsystem){
                     var process = exec(path, [vscode.workspace.rootPath], function(err, data) {
 
@@ -77,9 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
             /* Undefined workspace folder leads to error msg. */
             vscode.window.showErrorMessage("vscode.workspace.workspaceFolders is undefined. Please check that you have opened you project as a work space.");
         }
-
     });
-
     context.subscriptions.push(disposable);
 }
 
