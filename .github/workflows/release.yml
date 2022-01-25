@@ -16,10 +16,7 @@ jobs:
         with:
           node-version: 14
       - name: Package
-        run: cd love-launcher/ && ls -la
-        run: npm i -g vsce ovsx
-        run: npm install
-        run: vsce package
+        run: npm i -g vsce ovsx && cd love-launcher/ && ls -la && npm install && vsce package
       - run: vsce publish -p ${{secrets.VSCE}}
         env:
           VSCE: ${{secrets.VSCE}}
