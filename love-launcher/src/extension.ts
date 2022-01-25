@@ -63,14 +63,14 @@ export function activate(context: vscode.ExtensionContext) {
 				if (os.platform() === 'win32'){
 					if (!useConsoleSubsystem) {
 						process = cp.spawn(path, [actDocPath]);
-						currentInstances[process.pid] = process;
+						currentInstances[Number(process.pid)] = process;
 					} else {
 						process = cp.spawn(path, [actDocPath, "--console"]);
-						currentInstances[process.pid] = process;
+						currentInstances[Number(process.pid)] = process;
 					}
 				}else{
 					process = cp.exec('open -n -a love ' + actDocPath);
-					currentInstances[process.pid] = process;
+					currentInstances[Number(process.pid)] = process;
 				}
 			} else {
 				vscode.window.showErrorMessage("You have reached your max concurrent Löve instances. You can change this setting in your config.");
@@ -84,6 +84,3 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(disposable);
 }
-
-// this method is called when your extension is deactivated
-export function deactivate() { }
