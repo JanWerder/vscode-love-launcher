@@ -1,0 +1,24 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 14
+      - run: cd love-launcher
+      - run: npm i -g vsce ovsx
+      - run: npm install
+      - run: vsce package
+      - run: vsce publish -p ${{secrets.VSCE}}
+        env:
+          VSCE: ${{secrets.VSCE}}
