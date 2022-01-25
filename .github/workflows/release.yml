@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: 14
-      - run: cd love-launcher/
+      - run: cd love-launcher/love-launcher/
       - run: ls -la
       - run: npm i -g vsce ovsx
       - run: npm install
