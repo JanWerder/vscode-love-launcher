@@ -59,13 +59,18 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 
 				var process = null;
+				const Folders = vscode.workspace.workspaceFolders;
+				let loveProjectPath = actDocPath;
+				if (Folders){
+					loveProjectPath = Folders[0].uri.fsPath
+				}
 
 				if (os.platform() === 'win32'){
 					if (!useConsoleSubsystem) {
-						process = cp.spawn(path, [actDocPath]);
+						process = cp.spawn(path, [loveProjectPath]);
 						currentInstances[Number(process.pid)] = process;
 					} else {
-						process = cp.spawn(path, [actDocPath, "--console"]);
+						process = cp.spawn(path, [loveProjectPath, "--console"]);
 						currentInstances[Number(process.pid)] = process;
 					}
 				}else{
