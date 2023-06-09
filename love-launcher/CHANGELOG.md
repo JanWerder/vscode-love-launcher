@@ -20,3 +20,6 @@
 1.0.6
 - Revised the script to be more compatible to the recent vscode versions
 - Fixes for the root path by @Sikloon
+
+1.1.0
+- Use the workspace path instead of the file (Thanks upizpp)
