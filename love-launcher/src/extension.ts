@@ -7,7 +7,7 @@ import * as fs from 'fs';
 let currentInstances: Map<number, cp.ChildProcess> = new Map();
 
 const FIRST_RUN_KEY = 'lövelauncher.firstRunCompleted';
-const FLATPAK_APP_ID = 'org.love2d.love';
+const FLATPAK_APP_ID = 'org.love2d.love2d';
 const FLATPAK_MARKER = '__flatpak__';
 
 function isFlatpakInstalled(): boolean {
@@ -86,7 +86,7 @@ function validateLovePath(lovePath: string, platform: string): { valid: boolean;
 		return {
 			valid: false,
 			resolvedPath: lovePath,
-			error: `LOVE executable "${lovePath}" not found in PATH. Install LOVE (e.g., 'sudo apt install love' or 'flatpak install flathub org.love2d.love') or set the full path in settings.`
+			error: `LOVE executable "${lovePath}" not found in PATH. Install LOVE (e.g., 'sudo apt install love' or 'flatpak install flathub org.love2d.love2d') or set the full path in settings.`
 		};
 	}
 
