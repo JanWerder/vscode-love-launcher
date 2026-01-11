@@ -5,6 +5,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 
 let currentInstances: Map<number, cp.ChildProcess> = new Map();
+let statusBarItem: vscode.StatusBarItem | undefined;
 
 const FIRST_RUN_KEY = 'lövelauncher.firstRunCompleted';
 const FLATPAK_APP_ID = 'org.love2d.love2d';
@@ -101,6 +102,30 @@ function checkFirstRun(context: vscode.ExtensionContext): boolean {
 	return !context.globalState.get<boolean>(FIRST_RUN_KEY, false);
 }
 
+function isLoveProject(): boolean {
+	const workspaceFolders = vscode.workspace.workspaceFolders;
+	if (!workspaceFolders || workspaceFolders.length === 0) {
+		return false;
+	}
+
+	const mainLuaPath = path.join(workspaceFolders[0].uri.fsPath, 'main.lua');
+	return fs.existsSync(mainLuaPath);
+}
+
+function updateStatusBar(): void {
+	if (isLoveProject()) {
+		if (!statusBarItem) {
+			statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+			statusBarItem.command = 'lövelauncher.launch';
+			statusBarItem.text = '$(play) Run LOVE';
+			statusBarItem.tooltip = 'Launch LOVE project (Alt+L)';
+		}
+		statusBarItem.show();
+	} else {
+		statusBarItem?.hide();
+	}
+}
+
 async function showWelcomeMessage(context: vscode.ExtensionContext): Promise<boolean> {
 	const platform = os.platform();
 
@@ -140,7 +165,16 @@ export function activate(context: vscode.ExtensionContext) {
 
 	var maxInstances: number = Number(vscode.workspace.getConfiguration('lövelauncher').get('maxInstances'));
 	var overwrite: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('overwrite'));
-	
+
+	updateStatusBar();
+
+	const fileWatcher = vscode.workspace.createFileSystemWatcher('**/main.lua');
+	fileWatcher.onDidCreate(() => updateStatusBar());
+	fileWatcher.onDidDelete(() => updateStatusBar());
+	context.subscriptions.push(fileWatcher);
+
+	vscode.workspace.onDidChangeWorkspaceFolders(() => updateStatusBar());
+
 	let disposable = vscode.commands.registerCommand('lövelauncher.launch', async () => {
 		// Check for first run and show welcome message
 		if (checkFirstRun(context)) {
@@ -255,4 +289,12 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	context.subscriptions.push(disposable);
+
+	if (statusBarItem) {
+		context.subscriptions.push(statusBarItem);
+	}
+}
+
+export function deactivate() {
+	statusBarItem?.dispose();
 }

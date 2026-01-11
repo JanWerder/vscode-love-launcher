@@ -35,3 +35,6 @@
 
 1.2.3
 - Flatpak id Fix
+
+1.3.0
+- Added StatusBarItem to launch

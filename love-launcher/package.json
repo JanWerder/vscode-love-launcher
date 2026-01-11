@@ -13,7 +13,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:lövelauncher.launch"
+    "workspaceContains:main.lua"
   ],
   "keywords": [
     "Löve",
