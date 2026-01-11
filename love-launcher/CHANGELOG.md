@@ -43,3 +43,6 @@
 - Futher improvements for the StatusBarItem
 - Auto-Restart on Save
 - Custom Arguments
+
+1.4.1
+- Stopping with flatpak support

@@ -197,6 +197,11 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		});
 		currentInstances.clear();
+
+		if (os.platform() === 'linux') {
+			cp.spawn('flatpak', ['kill', FLATPAK_APP_ID], { detached: true, stdio: 'ignore' });
+		}
+
 		updateStatusBar();
 	});
 	context.subscriptions.push(stopCommand);
