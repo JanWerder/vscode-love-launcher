@@ -38,3 +38,8 @@
 
 1.3.0
 - Added StatusBarItem to launch
+
+1.4.0
+- Futher improvements for the StatusBarItem
+- Auto-Restart on Save
+- Custom Arguments

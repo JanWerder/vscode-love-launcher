@@ -6,6 +6,7 @@ import * as fs from 'fs';
 
 let currentInstances: Map<number, cp.ChildProcess> = new Map();
 let statusBarItem: vscode.StatusBarItem | undefined;
+let outputChannel: vscode.OutputChannel | undefined;
 
 const FIRST_RUN_KEY = 'lövelauncher.firstRunCompleted';
 const FLATPAK_APP_ID = 'org.love2d.love2d';
@@ -108,22 +109,33 @@ function isLoveProject(): boolean {
 		return false;
 	}
 
-	const mainLuaPath = path.join(workspaceFolders[0].uri.fsPath, 'main.lua');
-	return fs.existsSync(mainLuaPath);
+	const rootPath = workspaceFolders[0].uri.fsPath;
+	const mainLuaPath = path.join(rootPath, 'main.lua');
+	const confLuaPath = path.join(rootPath, 'conf.lua');
+
+	return fs.existsSync(mainLuaPath) || fs.existsSync(confLuaPath);
 }
 
 function updateStatusBar(): void {
-	if (isLoveProject()) {
-		if (!statusBarItem) {
-			statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-			statusBarItem.command = 'lövelauncher.launch';
-			statusBarItem.text = '$(play) Run LOVE';
-			statusBarItem.tooltip = 'Launch LOVE project (Alt+L)';
-		}
-		statusBarItem.show();
-	} else {
+	if (!isLoveProject()) {
 		statusBarItem?.hide();
+		return;
 	}
+
+	if (!statusBarItem) {
+		statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+	}
+
+	if (currentInstances.size > 0) {
+		statusBarItem.text = '$(debug-stop) Stop LOVE';
+		statusBarItem.tooltip = 'Stop running LOVE instance';
+		statusBarItem.command = 'lövelauncher.stop';
+	} else {
+		statusBarItem.text = '$(play) Run LOVE';
+		statusBarItem.tooltip = 'Launch LOVE project (Alt+L)';
+		statusBarItem.command = 'lövelauncher.launch';
+	}
+	statusBarItem.show();
 }
 
 async function showWelcomeMessage(context: vscode.ExtensionContext): Promise<boolean> {
@@ -166,14 +178,37 @@ export function activate(context: vscode.ExtensionContext) {
 	var maxInstances: number = Number(vscode.workspace.getConfiguration('lövelauncher').get('maxInstances'));
 	var overwrite: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('overwrite'));
 
+	outputChannel = vscode.window.createOutputChannel('LOVE');
+	context.subscriptions.push(outputChannel);
+
 	updateStatusBar();
 
-	const fileWatcher = vscode.workspace.createFileSystemWatcher('**/main.lua');
+	const fileWatcher = vscode.workspace.createFileSystemWatcher('**/{main,conf}.lua');
 	fileWatcher.onDidCreate(() => updateStatusBar());
 	fileWatcher.onDidDelete(() => updateStatusBar());
 	context.subscriptions.push(fileWatcher);
 
 	vscode.workspace.onDidChangeWorkspaceFolders(() => updateStatusBar());
+
+	const stopCommand = vscode.commands.registerCommand('lövelauncher.stop', () => {
+		currentInstances.forEach((instance) => {
+			if (!instance.killed) {
+				instance.kill();
+			}
+		});
+		currentInstances.clear();
+		updateStatusBar();
+	});
+	context.subscriptions.push(stopCommand);
+
+	const saveListener = vscode.workspace.onDidSaveTextDocument((document) => {
+		const autoRestart = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('autoRestartOnSave'));
+
+		if (autoRestart && document.languageId === 'lua' && currentInstances.size > 0) {
+			vscode.commands.executeCommand('lövelauncher.launch');
+		}
+	});
+	context.subscriptions.push(saveListener);
 
 	let disposable = vscode.commands.registerCommand('lövelauncher.launch', async () => {
 		// Check for first run and show welcome message
@@ -220,6 +255,8 @@ export function activate(context: vscode.ExtensionContext) {
 				const useFlatpak = validation.isFlatpak === true;
 				const useConsoleSubsystem: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('useConsoleSubsystem'));
 				const saveAllOnLaunch: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('saveAllOnLaunch'));
+				const customArgsStr: string = String(vscode.workspace.getConfiguration('lövelauncher').get('customArgs') || '');
+				const customArgs: string[] = customArgsStr.split(/\s+/).filter(arg => arg.length > 0);
 
 				if (saveAllOnLaunch) {
 					vscode.workspace.saveAll();
@@ -232,6 +269,7 @@ export function activate(context: vscode.ExtensionContext) {
 						}
 					});
 					currentInstances.clear();
+					outputChannel?.clear();
 				}
 
 				const Folders = vscode.workspace.workspaceFolders;
@@ -243,19 +281,32 @@ export function activate(context: vscode.ExtensionContext) {
 				let process: cp.ChildProcess;
 
 				if (platform === 'win32') {
-					const args = useConsoleSubsystem ? [loveProjectPath, "--console"] : [loveProjectPath];
+					const args = useConsoleSubsystem ? [loveProjectPath, "--console", ...customArgs] : [loveProjectPath, ...customArgs];
 					process = cp.spawn(resolvedLovePath, args);
 				} else if (platform === 'darwin') {
-					process = cp.spawn('open', ['-n', '-a', 'love', '--args', loveProjectPath]);
+					process = cp.spawn('open', ['-n', '-a', 'love', '--args', loveProjectPath, ...customArgs]);
 				} else if (useFlatpak) {
-					process = cp.spawn('flatpak', ['run', FLATPAK_APP_ID, loveProjectPath]);
+					process = cp.spawn('flatpak', ['run', FLATPAK_APP_ID, loveProjectPath, ...customArgs]);
 				} else {
-					process = cp.spawn(resolvedLovePath, [loveProjectPath]);
+					process = cp.spawn(resolvedLovePath, [loveProjectPath, ...customArgs]);
 				}
 
 				if (process.pid) {
 					currentInstances.set(process.pid, process);
+					updateStatusBar();
 				}
+
+				if (process.stdout) {
+					process.stdout.on('data', (data: Buffer) => {
+						outputChannel?.append(data.toString());
+					});
+				}
+				if (process.stderr) {
+					process.stderr.on('data', (data: Buffer) => {
+						outputChannel?.append(data.toString());
+					});
+				}
+				outputChannel?.show(true);
 
 				process.on('error', async (err: Error) => {
 					const result = await vscode.window.showErrorMessage(
@@ -271,12 +322,14 @@ export function activate(context: vscode.ExtensionContext) {
 					if (process.pid) {
 						currentInstances.delete(process.pid);
 					}
+					updateStatusBar();
 				});
 
 				process.on('exit', () => {
 					if (process.pid) {
 						currentInstances.delete(process.pid);
 					}
+					updateStatusBar();
 				});
 			} else {
 				vscode.window.showErrorMessage("You have reached your max concurrent Löve instances. You can change this setting in your config.");
