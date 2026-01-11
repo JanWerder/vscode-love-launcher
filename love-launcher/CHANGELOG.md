@@ -29,3 +29,6 @@
 
 1.2.1
 - Linux fixes, Launch feedback and Rebindable Shortcut
+
+1.2.2
+- Flatpak support

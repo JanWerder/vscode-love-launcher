@@ -7,6 +7,25 @@ import * as fs from 'fs';
 let currentInstances: Map<number, cp.ChildProcess> = new Map();
 
 const FIRST_RUN_KEY = 'lövelauncher.firstRunCompleted';
+const FLATPAK_APP_ID = 'org.love2d.love';
+const FLATPAK_MARKER = '__flatpak__';
+
+function isFlatpakInstalled(): boolean {
+	const flatpakPath = findExecutableInPath('flatpak');
+	if (!flatpakPath) {
+		return false;
+	}
+
+	try {
+		const result = cp.spawnSync('flatpak', ['info', FLATPAK_APP_ID], {
+			encoding: 'utf-8',
+			timeout: 5000
+		});
+		return result.status === 0;
+	} catch {
+		return false;
+	}
+}
 
 function getDefaultLovePath(): string {
 	const platform = os.platform();
@@ -38,7 +57,7 @@ function findExecutableInPath(executable: string): string | null {
 	return null;
 }
 
-function validateLovePath(lovePath: string, platform: string): { valid: boolean; resolvedPath: string; error?: string } {
+function validateLovePath(lovePath: string, platform: string): { valid: boolean; resolvedPath: string; isFlatpak?: boolean; error?: string } {
 	if (platform === 'darwin') {
 		return { valid: true, resolvedPath: lovePath };
 	}
@@ -60,6 +79,10 @@ function validateLovePath(lovePath: string, platform: string): { valid: boolean;
 	}
 
 	if (platform === 'linux') {
+		if (isFlatpakInstalled()) {
+			return { valid: true, resolvedPath: FLATPAK_MARKER, isFlatpak: true };
+		}
+
 		return {
 			valid: false,
 			resolvedPath: lovePath,
@@ -160,6 +183,7 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 
 				const resolvedLovePath = validation.resolvedPath;
+				const useFlatpak = validation.isFlatpak === true;
 				const useConsoleSubsystem: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('useConsoleSubsystem'));
 				const saveAllOnLaunch: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('saveAllOnLaunch'));
 
@@ -189,6 +213,8 @@ export function activate(context: vscode.ExtensionContext) {
 					process = cp.spawn(resolvedLovePath, args);
 				} else if (platform === 'darwin') {
 					process = cp.spawn('open', ['-n', '-a', 'love', '--args', loveProjectPath]);
+				} else if (useFlatpak) {
+					process = cp.spawn('flatpak', ['run', FLATPAK_APP_ID, loveProjectPath]);
 				} else {
 					process = cp.spawn(resolvedLovePath, [loveProjectPath]);
 				}
