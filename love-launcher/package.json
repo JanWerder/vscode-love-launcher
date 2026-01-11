@@ -43,7 +43,7 @@
       "properties": {
         "lövelauncher.path": {
           "type": "string",
-          "description": "Set Path to your love executable on Windows. On macOS make sure that love is accessible via 'open -n -a love'",
+          "description": "Path to your love executable. Windows: default path shown. Linux: use 'love' if in PATH, or full path like /usr/bin/love. macOS: uses 'open -n -a love' automatically.",
           "default": "C:\\Program Files\\LOVE\\love.exe"
         },
         "lövelauncher.maxInstances": {

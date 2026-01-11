@@ -1,82 +1,126 @@
 import * as vscode from 'vscode';
-import cp = require('child_process');
-import { ChildProcess } from 'node:child_process';
-const os = require('os');
+import * as cp from 'child_process';
+import * as path from 'path';
+import * as os from 'os';
 
-let currentInstances: cp.ChildProcess[] = [];
+let currentInstances: Map<number, cp.ChildProcess> = new Map();
+
+const FIRST_RUN_KEY = 'lövelauncher.firstRunCompleted';
+
+function checkFirstRun(context: vscode.ExtensionContext): boolean {
+	return !context.globalState.get<boolean>(FIRST_RUN_KEY, false);
+}
+
+async function showWelcomeMessage(context: vscode.ExtensionContext): Promise<boolean> {
+	const platform = os.platform();
+
+	let message: string;
+	let needsConfiguration: boolean;
+
+	if (platform === 'darwin') {
+		message = 'Welcome to LOVE Launcher! On macOS, the extension works out of the box. Press Alt+L to launch your LOVE project.';
+		needsConfiguration = false;
+	} else if (platform === 'win32') {
+		message = 'Welcome to LOVE Launcher! Please configure the path to your LOVE executable to get started.';
+		needsConfiguration = true;
+	} else {
+		message = 'Welcome to LOVE Launcher! Please configure the path to your LOVE executable (or ensure "love" is in your PATH).';
+		needsConfiguration = true;
+	}
+
+	const buttons: string[] = needsConfiguration
+		? ['Open Settings', 'Dismiss']
+		: ['OK'];
+
+	const result = await vscode.window.showInformationMessage(message, ...buttons);
+
+	if (result === 'Open Settings') {
+		await vscode.commands.executeCommand(
+			'workbench.action.openSettings',
+			'lövelauncher.path'
+		);
+	}
+
+	await context.globalState.update(FIRST_RUN_KEY, true);
+
+	return needsConfiguration;
+}
 
 export function activate(context: vscode.ExtensionContext) {
 
 	var maxInstances: number = Number(vscode.workspace.getConfiguration('lövelauncher').get('maxInstances'));
 	var overwrite: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('overwrite'));
 	
-	let disposable = vscode.commands.registerCommand('lövelauncher.launch', () => {
-
-		/* 
-		Since "vscode.workspace.rootPath" has been deprecated, "vscode.workspace.workspaceFolders" should be used.
-		However, due to the multi-root workspaces of VSCode, it would be more prudent to identify the current active
-		file (being open in the VSCode editor), and look for it's root folder amongst the others. Start by getting 
-		the currently-being-edited document from the VSCode editor.
-		*/
-		var actDocPath = vscode.window.activeTextEditor?.document.uri.fsPath;
-		var pathlen = actDocPath?.length;
-		/* 
-		Since the above uri path includes the reference to the actual file being edited (as: 
-		...\<workspace root>\<filename.extension>), we have to find the last "\" in the uri string
-		and cut off all characters thereafter, to only have the folder uri (as: ...\<workspace root>).
-		*/
-
-		var pathSeperator: string = (os.platform() === 'win32'? '\\': '/');
-
-		if (pathlen && actDocPath) {
-			for (let i = 0; i < pathlen; i++) {
-				/* Search from end of uri string to beginning */
-				if (actDocPath.charAt(pathlen - i) === pathSeperator) {
-					/* After finding the first "\" (from the right hand side), slice off all text after that. */
-					actDocPath = actDocPath.slice(0, pathlen - i);
-					break;
-				}
+	let disposable = vscode.commands.registerCommand('lövelauncher.launch', async () => {
+		// Check for first run and show welcome message
+		if (checkFirstRun(context)) {
+			const needsConfiguration = await showWelcomeMessage(context);
+			if (needsConfiguration) {
+				return;
 			}
 		}
-		/* Check if a workspace folder has been opened and is active; 'undefined' leads to error msg - see furhter down. */
+
+		// Get the directory of the currently active file as fallback
+		let actDocPath = vscode.window.activeTextEditor?.document.uri.fsPath;
+		if (actDocPath) {
+			actDocPath = path.dirname(actDocPath);
+		}
+		// Check if we have a valid path to work with
 		if (actDocPath !== undefined) {
 
-			if (currentInstances.length < maxInstances || overwrite) {
-				var path: string = String(vscode.workspace.getConfiguration('lövelauncher').get('path'));
-				var useConsoleSubsystem: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('useConsoleSubsystem'));
-				var saveAllOnLaunch: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('saveAllOnLaunch'));
+			if (currentInstances.size < maxInstances || overwrite) {
+				const lovePath: string = String(vscode.workspace.getConfiguration('lövelauncher').get('path'));
+				const useConsoleSubsystem: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('useConsoleSubsystem'));
+				const saveAllOnLaunch: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('saveAllOnLaunch'));
 
 				if (saveAllOnLaunch) {
 					vscode.workspace.saveAll();
 				}
 
 				if (overwrite) {
-					currentInstances.forEach(function (instance) {
-						if (instance.killed === false) {
+					currentInstances.forEach((instance) => {
+						if (!instance.killed) {
 							instance.kill();
 						}
 					});
+					currentInstances.clear();
 				}
 
-				var process = null;
 				const Folders = vscode.workspace.workspaceFolders;
 				let loveProjectPath = actDocPath;
-				if (Folders){
-					loveProjectPath = Folders[0].uri.fsPath
+				if (Folders) {
+					loveProjectPath = Folders[0].uri.fsPath;
 				}
 
-				if (os.platform() === 'win32'){
-					if (!useConsoleSubsystem) {
-						process = cp.spawn(path, [loveProjectPath]);
-						currentInstances[Number(process.pid)] = process;
-					} else {
-						process = cp.spawn(path, [loveProjectPath, "--console"]);
-						currentInstances[Number(process.pid)] = process;
-					}
-				}else{
-					process = cp.exec('open -n -a love ' + actDocPath);
-					currentInstances[Number(process.pid)] = process;
+				let process: cp.ChildProcess;
+				const platform = os.platform();
+
+				if (platform === 'win32') {
+					const args = useConsoleSubsystem ? [loveProjectPath, "--console"] : [loveProjectPath];
+					process = cp.spawn(lovePath, args);
+				} else if (platform === 'darwin') {
+					process = cp.spawn('open', ['-n', '-a', 'love', '--args', loveProjectPath]);
+				} else {
+					// Linux and other Unix-like systems
+					process = cp.spawn(lovePath, [loveProjectPath]);
 				}
+
+				if (process.pid) {
+					currentInstances.set(process.pid, process);
+				}
+
+				process.on('error', (err: Error) => {
+					vscode.window.showErrorMessage(`Failed to launch LOVE: ${err.message}`);
+					if (process.pid) {
+						currentInstances.delete(process.pid);
+					}
+				});
+
+				process.on('exit', () => {
+					if (process.pid) {
+						currentInstances.delete(process.pid);
+					}
+				});
 			} else {
 				vscode.window.showErrorMessage("You have reached your max concurrent Löve instances. You can change this setting in your config.");
 			}
