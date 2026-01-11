@@ -2,10 +2,77 @@ import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as path from 'path';
 import * as os from 'os';
+import * as fs from 'fs';
 
 let currentInstances: Map<number, cp.ChildProcess> = new Map();
 
 const FIRST_RUN_KEY = 'lövelauncher.firstRunCompleted';
+
+function getDefaultLovePath(): string {
+	const platform = os.platform();
+	if (platform === 'win32') {
+		return 'C:\\Program Files\\LOVE\\love.exe';
+	} else if (platform === 'darwin') {
+		return 'love';
+	} else {
+		return 'love';
+	}
+}
+
+function findExecutableInPath(executable: string): string | null {
+	const pathEnv = process.env.PATH || '';
+	const pathSeparator = os.platform() === 'win32' ? ';' : ':';
+	const paths = pathEnv.split(pathSeparator);
+
+	for (const dir of paths) {
+		const fullPath = path.join(dir, executable);
+		if (fs.existsSync(fullPath)) {
+			try {
+				fs.accessSync(fullPath, fs.constants.X_OK);
+				return fullPath;
+			} catch {
+				continue;
+			}
+		}
+	}
+	return null;
+}
+
+function validateLovePath(lovePath: string, platform: string): { valid: boolean; resolvedPath: string; error?: string } {
+	if (platform === 'darwin') {
+		return { valid: true, resolvedPath: lovePath };
+	}
+
+	if (path.isAbsolute(lovePath)) {
+		if (fs.existsSync(lovePath)) {
+			return { valid: true, resolvedPath: lovePath };
+		}
+		return {
+			valid: false,
+			resolvedPath: lovePath,
+			error: `LOVE executable not found at: ${lovePath}`
+		};
+	}
+
+	const resolvedPath = findExecutableInPath(lovePath);
+	if (resolvedPath) {
+		return { valid: true, resolvedPath };
+	}
+
+	if (platform === 'linux') {
+		return {
+			valid: false,
+			resolvedPath: lovePath,
+			error: `LOVE executable "${lovePath}" not found in PATH. Install LOVE (e.g., 'sudo apt install love' or 'flatpak install flathub org.love2d.love') or set the full path in settings.`
+		};
+	}
+
+	return {
+		valid: false,
+		resolvedPath: lovePath,
+		error: `LOVE executable "${lovePath}" not found. Please configure the correct path in settings.`
+	};
+}
 
 function checkFirstRun(context: vscode.ExtensionContext): boolean {
 	return !context.globalState.get<boolean>(FIRST_RUN_KEY, false);
@@ -69,7 +136,30 @@ export function activate(context: vscode.ExtensionContext) {
 		if (actDocPath !== undefined) {
 
 			if (currentInstances.size < maxInstances || overwrite) {
-				const lovePath: string = String(vscode.workspace.getConfiguration('lövelauncher').get('path'));
+				const platform = os.platform();
+				let lovePath: string = String(vscode.workspace.getConfiguration('lövelauncher').get('path'));
+
+				const windowsDefault = 'C:\\Program Files\\LOVE\\love.exe';
+				if (lovePath === windowsDefault && platform !== 'win32') {
+					lovePath = getDefaultLovePath();
+				}
+
+				const validation = validateLovePath(lovePath, platform);
+				if (!validation.valid) {
+					const result = await vscode.window.showErrorMessage(
+						validation.error || 'LOVE executable not found.',
+						'Open Settings'
+					);
+					if (result === 'Open Settings') {
+						await vscode.commands.executeCommand(
+							'workbench.action.openSettings',
+							'lövelauncher.path'
+						);
+					}
+					return;
+				}
+
+				const resolvedLovePath = validation.resolvedPath;
 				const useConsoleSubsystem: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('useConsoleSubsystem'));
 				const saveAllOnLaunch: boolean = Boolean(vscode.workspace.getConfiguration('lövelauncher').get('saveAllOnLaunch'));
 
@@ -93,24 +183,31 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 
 				let process: cp.ChildProcess;
-				const platform = os.platform();
 
 				if (platform === 'win32') {
 					const args = useConsoleSubsystem ? [loveProjectPath, "--console"] : [loveProjectPath];
-					process = cp.spawn(lovePath, args);
+					process = cp.spawn(resolvedLovePath, args);
 				} else if (platform === 'darwin') {
 					process = cp.spawn('open', ['-n', '-a', 'love', '--args', loveProjectPath]);
 				} else {
-					// Linux and other Unix-like systems
-					process = cp.spawn(lovePath, [loveProjectPath]);
+					process = cp.spawn(resolvedLovePath, [loveProjectPath]);
 				}
 
 				if (process.pid) {
 					currentInstances.set(process.pid, process);
 				}
 
-				process.on('error', (err: Error) => {
-					vscode.window.showErrorMessage(`Failed to launch LOVE: ${err.message}`);
+				process.on('error', async (err: Error) => {
+					const result = await vscode.window.showErrorMessage(
+						`Failed to launch LOVE: ${err.message}`,
+						'Open Settings'
+					);
+					if (result === 'Open Settings') {
+						await vscode.commands.executeCommand(
+							'workbench.action.openSettings',
+							'lövelauncher.path'
+						);
+					}
 					if (process.pid) {
 						currentInstances.delete(process.pid);
 					}

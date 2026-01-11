@@ -23,3 +23,9 @@
 
 1.1.0
 - Use the workspace path instead of the file (Thanks upizpp)
+
+1.2.0
+- Multiple platform fixes
+
+1.2.1
+- Linux fixes, Launch feedback and Rebindable Shortcut
