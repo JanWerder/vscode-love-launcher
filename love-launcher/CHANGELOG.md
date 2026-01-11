@@ -32,3 +32,6 @@
 
 1.2.2
 - Flatpak support
+
+1.2.3
+- Flatpak id Fix
